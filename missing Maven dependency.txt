@@ -1,0 +1,6 @@
+<!-- https://mvnrepository.com/artifact/com.amazonaws.serverless/aws-serverless-java-container-core -->
+<dependency>
+    <groupId>com.amazonaws.serverless</groupId>
+    <artifactId>aws-serverless-java-container-core</artifactId>
+    <version>0.2</version>
+</dependency>
