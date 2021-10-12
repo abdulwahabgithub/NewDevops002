@@ -1,0 +1,912 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This AWS CloudFormation template will set up an AWS CodePipeline with single build stage to connect and push code to JFrog Artifactory using token-based access i.e. integrated for java/maven use."
+Metadata:
+  LICENSE: >-
+   Copyright 2017 Amazon Web Services
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: 'AWS CodePipeline Configuration'
+        Parameters:
+          - pArtifactStagingBucketName
+          - pCodePipelineName
+          - pApprovalStageUrl
+      -
+        Label:
+          default: 'Github Repository Source Configuration'
+        Parameters:
+          - pBranchName
+          - pRepositoryName
+          - pGitHubOwner
+          - pGitHubToken
+          - pApplicationName
+          - pCodeBuildVPC
+          - pCodeBuildSubnetA
+          - pCodeBuildSubnetB
+          - pCodeBuildSubnetC
+          - pCodeBuildServiceKeyAlias
+          - pAutoScalingGroupName
+          - pDeploymentTagKey
+          - pDeploymentTagValue
+          - pExecuteDeployStage
+          - pSnsServiceKeyAlias
+      -
+        Label:
+          default: 'JFrog Artifactory Configuration Parameters'
+        Parameters:
+          - pArtifactoryHost
+          - pArtifactoryRepoKey
+          - pArtifactoryArtifactPath
+          - pArtifactoryArtifactType
+          - pArtifactVersion
+          - pArtifactName
+          - pArtifactoryUser
+          - pArtifactoryToken
+      -
+        Label:
+          default: 'Sonarqube Configuration'
+        Parameters:
+          - pSonarHost
+          - pSonarToken
+          - pProjectTag
+          - pProjectName
+      -
+        Label:
+          default: 'PGE tags'
+        Parameters:
+          - pPgeName
+          - pPgeAppId
+          - pPgeEnv
+          - pPgeNotify
+          - pPgeOrderNum
+          - pPgeOwner
+          - pPgeCompliance
+          - pPgeDataClassification
+          - pPgeBusinessImpact
+          - pPgeCrisScore
+          - pPgeLandingZone
+    ParameterLabels:
+      pArtifactStagingBucketName:
+        default: 'AWS Artifact S3 Staging Bucket Name'
+      pCodePipelineName:
+        default: 'Name of new AWS CodePipeline pipeline'
+      pApprovalStageUrl:
+        default: 'The URL for review by the approver designated within the approval stage'
+      pBranchName:
+        default: 'Name of the GitHub Branch'
+      pRepositoryName:
+        default: 'Name of the GitHub Repository'
+      pGitHubOwner:
+        default: 'GitHub Repository Owner'
+      pGitHubToken:
+        default: 'GitHub Personal Access Token for accessing the target repository'
+      pApplicationName:
+        default: 'Application Name'
+      pCodeBuildVPC:
+        default: 'Build VPC ID'
+      pCodeBuildSubnetA:
+        default: 'Build Subnet A'
+      pCodeBuildSubnetB:
+        default: 'Build Subnet B'
+      pCodeBuildSubnetC:
+        default: 'Build Subnet C'
+      pCodeBuildServiceKeyAlias:
+        default: 'AWS Code Build Service Encryption Key Alias'
+      pAutoScalingGroupName:
+        default: 'Deployment Auto-Scaling Group Name'
+      pDeploymentTagKey:
+        default: 'Deployment AWS EC2 Tag Key'
+      pDeploymentTagValue:
+        default: 'Deployment AWS EC2 Tag Value'
+      pSnsServiceKeyAlias:
+        default: 'AWS SNS Topic Service Encryption Key Alias'
+      pArtifactoryHost:
+        default: 'JFrog Artifactory URI'
+      pArtifactoryRepoKey:
+        default: 'JFrog Artifactory Repo Key (e.g. libs-snapshot)'
+      pArtifactoryArtifactPath:
+        default: 'JFrog Artifactory Repo Key/Path (e.g. ec2deploy)'
+      pArtifactoryArtifactType:
+        default: 'JFrog Artifactory Artifact Type  (e.g. jar, py, rpm,)'
+      pArtifactVersion:
+        default: 'JFrog Artifactory Version No. (e.g. 1.0)'
+      pArtifactName:
+        default: 'JFrog Artifactory Artifact Name (e.g. spring-boot-lambda)'
+      pArtifactoryUser:
+        default: "Artifactory User ID"
+      pArtifactoryToken:
+        default: "Artifactory User Access Token"
+      pSonarHost:
+        default: "Sonarqube Host Url"
+      pSonarToken:
+        default: "Sonarqube Token to publish results" 
+      pProjectName:
+        default: "Project Name in Sonarqube. The project value that is given here would be tagged with the below parameter"  
+      pProjectTag:
+        default: "Project tag to be associated with sonarqube project. Enter the appropriate tag for projects to be grouped under a protfolio."    
+      pPgeName:
+        default: 'PGE asset name'
+      pPgeAppId:
+        default: 'PGE App ID from AMPS'
+      pPgeEnv:
+        default: 'PGE environment'
+      pPgeNotify:
+        default: 'PGE notification email'
+      pPgeOrderNum:
+        default: 'PGE associated order number'
+      pPgeOwner:
+        default: 'PGE asset owner - LanID'
+      pPgeCompliance: {default: "PGE Compliance Mandate" }
+      pPgeDataClassification: {default: "PGE Data Classification" }
+      pPgeBusinessImpact: {default: "PGE Business Impact" }
+      pPgeCrisScore: {default: "Cyber Risk Impact Score (CRIS)"}
+      pPgeLandingZone: {default: "Only for landing Zone created Assets"}
+      pExecuteDeployStage:  
+        default: "Paramater to select if the deployment stage should be run after build"
+Parameters:
+  pArtifactStagingBucketName:
+    Description: 'AWS S3 Artifact Staging Bucket Name'
+    Type: String
+  pCodePipelineName:
+    Description: 'Name of new AWS CodePipeline pipeline'
+    Type: String
+  pApprovalStageUrl:
+    Description: 'The URL for review by the approver designated within the approval stage'
+    Type: String
+  pBranchName:
+    Description: 'Enter the Branch (dev, master, feature, etc) you wish to pull from the GitHub repo'
+    Type: String
+  pRepositoryName:
+    Description: 'Specific GitHub target repository  - do not include .git extension'
+    Type: String
+  pGitHubOwner:
+    Description: 'GitHub Repository Owner'
+    Type: String
+    Default: pgetech
+  pGitHubToken:
+    Type: 'String'
+    Description: 'Enter the GitHub Access Token'
+    NoEcho: true
+  pApplicationName:
+    Description: 'Application Name'
+    Type: String
+  pCodeBuildVPC:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'Build VPC ID'
+    Default: "/vpc/id"
+  pCodeBuildSubnetA:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'Build Subnet A ID'
+    Default: "/vpc/privatesubnet1/id"
+  pCodeBuildSubnetB:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'Build Subnet B ID'
+    Default: "/vpc/privatesubnet2/id"
+  pCodeBuildSubnetC:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'Build Subnet C ID'
+    Default: "/vpc/privatesubnet1/id"
+  pCodeBuildServiceKeyAlias:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'AWS Code Build Service Encryption Key Alias'
+    Default: '/servicekey/codebuild'
+  pAutoScalingGroupName:
+    Description: 'Deployment Auto-Scaling Group Name'
+    Type: String
+  pDeploymentTagKey:
+    Description: 'Deployment AWS EC2 Tag Key'
+    Type: String
+  pExecuteDeployStage:
+    Description: 'Paramater to select if the deployment stage should be run after build'
+    Type: String
+    Default: 'skip' 
+    AllowedValues:
+     - continue
+     - skip 
+  pDeploymentTagValue:
+    Description: 'Deployment AWS EC2 Tag Value'
+    Type: String
+  pSnsServiceKeyAlias:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: 'AWS SNS Topic Service Encryption Key Alias'
+    Default: '/servicekey/sns'
+  pArtifactoryHost:
+    Description: 'JFrog Artifactory URI'
+    Type: String
+  pArtifactoryRepoKey:
+    Description: 'JFrog Artifactory Repo Key/Path (e.g. libs-snapshot)'
+    Type: String
+  pArtifactoryArtifactPath:
+    Description: 'JFrog Artifactory Repo Key/Path (e.g. ec2deploy)'
+    Type: String
+  pArtifactoryArtifactType:
+    Description: 'JFrog Artifactory Artifact Type  (e.g. jar, py, rpm,)'
+    Type: String
+    AllowedValues:
+      - jar
+      - py
+      - rpm
+    Default: 'jar'
+  pArtifactVersion:
+    Description: 'JFrog Artifactory Version No. (e.g. 1.0)'
+    Type: String
+  pArtifactName:
+    Description: 'JFrog Artifactory Artifact Name (e.g. spring-boot-lambda-1.0.0-SNAPSHOT.jar)'
+    Type: String
+  pArtifactoryUser:
+    Description: 'Artifactory User ID'
+    Type: String
+  pArtifactoryToken:
+    Description: 'Artifactory User Access Token'
+    Type: String
+    NoEcho: true
+  pSonarHost:
+    Description: "Sonarqube Host Url"
+    Type: String
+  pSonarToken:
+    Description: "Sonarqube Token to publish results"
+    Type: String 
+    NoEcho: true
+  pProjectName:
+    Description: "Project Name in Sonarqube. The project value that is given here would be tagged with the below parameter"
+    Type: String
+  pProjectTag:
+    Description: "Project tag to be associated with sonarqube project. Enter the appropriate tag for projects to be grouped under a protfolio."
+    Type: String
+  pPgeName:   # PG&E Asset Tag Name
+    Description: "PG&E Asset Name"
+    Type: String
+  pPgeAppId: # PG&E AMPS ID
+    Description: "AMPS Id"
+    Type: String
+  pPgeEnv: # Deployment Environment
+    Description: "Operating environment"
+    Type: String
+    AllowedValues: ["DEV", "QA", "TEST", "PROD", "SAND", "TRN"]
+    Default: "DEV"
+  pPgeNotify: # PG&E Notification E-mail
+    Description: "Notification for backup vault creation failure & maintenance"
+    Type: String
+  pPgeOrderNum: # PG&E Order Number
+    Description: "Capital Order Number"
+    Type: String
+  pPgeOwner: # PG&E Owner
+    Description: "System or Asset Owner"
+    Type: String
+  pPgeCompliance:
+    Description: "PGE Data Classification"
+    Type: String
+    AllowedValues:
+      - Sox
+      - NERC
+      - PII
+      - CCPA
+  pPgeDataClassification:
+    Description: "PGE Data Classification"
+    Type: String
+    AllowedValues:
+      - Public
+      - Internal
+      - Confidential
+      - Restricted
+      - Privileged
+  pPgeBusinessImpact:
+    Description: "PGE Business Impact"
+    Type: String
+    AllowedValues:
+      - "Mission Critical"
+      - "Business Critical"
+      - "Significant"
+      - "Important"
+      - "No Impact"
+  pPgeCrisScore:
+    Description: "Cyber Risk Impact Score (CRIS)"
+    AllowedValues:
+      - "Low"
+      - "Medium"
+      - "High"
+    Type: String
+  pPgeLandingZone:
+    Description: "Only for landing Zone created Assets"
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
+Conditions:
+  IsProdCondition: !Equals
+    - !Ref pPgeEnv
+    - PROD
+  ExecuteDeployStage: !Equals
+    - !Ref pExecuteDeployStage
+    - continue 
+Resources:
+  rSNSTopic:
+    Type: AWS::SNS::Topic
+    Condition: IsProdCondition
+    Properties:
+      Subscription:
+        - Endpoint: !Ref pPgeNotify
+          Protocol: "email"
+      KmsMasterKeyId: !Ref pSnsServiceKeyAlias
+      TopicName: !Sub "${pApplicationName}-Deployment-SNS-Topic"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rCodeBuildSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${pApplicationName}-Code-Build-Security-Group-Maven"
+      GroupDescription: 'CodeBuild SecurityGroup'
+      VpcId: !Ref pCodeBuildVPC
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rCodeBuildRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: spring-boot-maven-codebuild-maven-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:DescribeSubnets'
+                  - 'ec2:DescribeSecurityGroups'
+                  - 'ec2:DescribeDhcpOptions'
+                  - 'ec2:DescribeVpcs'
+                  - 'ec2:CreateNetworkInterfacePermission'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:PutObject'
+                Resource:
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName]]
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName, '/*']]
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'sns:*'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:DescribeKey"
+                  - "kms:Encrypt"
+                  - "kms:Decrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey"
+                  - "kms:GenerateDataKeyWithoutPlaintext"
+                Resource: "*"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rCodeBuild:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      EncryptionKey: !Ref pCodeBuildServiceKeyAlias
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image:  aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: false
+        EnvironmentVariables:
+          - Name: AWS_S3_STAGING_BUCKET
+            Value: !Ref pArtifactStagingBucketName
+          - Name: ARTIFACTORY_HOST
+            Value: !Ref pArtifactoryHost
+          - Name: ARTIFACTORY_REPO_KEY_PATH
+            Value: !Sub "${pArtifactoryRepoKey}/${pArtifactoryArtifactPath}/${pArtifactoryArtifactType}/${pArtifactVersion}"
+          - Name: ARTIFACT_NAME
+            Value: !Ref pArtifactName
+          - Name: ARTIFACT_TYPE
+            Value: !Ref pArtifactoryArtifactType
+          - Name: ARTIFACT_VERSION
+            Value: !Ref pArtifactVersion
+          - Name: ARTIFACTORY_USER
+            Value: !Ref pArtifactoryUser
+          - Name: ARTIFACTORY_TOKEN
+            Value: !Ref pArtifactoryToken
+          - Name: SONAR_HOST
+            Value: !Ref pSonarHost
+          - Name: SONAR_TOKEN
+            Value: !Ref pSonarToken
+          - Name: PROJECT_NAME
+            Value: !Ref pProjectName
+          - Name:  Project_Tag
+            Value: !Ref pProjectTag        
+      Name: !Sub "${pApplicationName}-MavenBuildDeploy"
+      ServiceRole: !Ref rCodeBuildRole
+      VpcConfig:
+        VpcId: !Ref pCodeBuildVPC
+        Subnets:
+          - !Ref pCodeBuildSubnetA
+          - !Ref pCodeBuildSubnetB
+          - !Ref pCodeBuildSubnetC
+        SecurityGroupIds:  [!GetAtt rCodeBuildSecurityGroup.GroupId]
+      TimeoutInMinutes: 5
+      Source:
+        Type: CODEPIPELINE
+        Location: !Sub "https://github.com/${pGitHubOwner}/${pRepositoryName}/"
+        BuildSpec: "ec2only/java/app/pipeline/buildspec.yml"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rCodeDeployServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: "Code Deploy Service Role for AWS EC2 deployments"
+      RoleName: !Sub "${pApplicationName}-CodeDeploy-Service-Role"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Sub "codedeploy.${AWS::Region}.amazonaws.com"
+              AWS:
+                - !GetAtt rPipelineRole.Arn
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: !Sub "${pApplicationName}-CodeDeploy-Attached-Policy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:PutObject'
+                Resource:
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName]]
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName, '/*']]
+              - Effect: Allow
+                Action:
+                  - 'codedeploy:CreateDeployment'
+                  - 'codedeploy:Batch*'
+                  - 'codedeploy:Get*'
+                  - 'codedeploy:List*'
+                  - 'codedeploy:RegisterApplicationRevision'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'sns:*'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:DescribeKey"
+                  - "kms:Encrypt"
+                  - "kms:Decrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey"
+                  - "kms:GenerateDataKeyWithoutPlaintext"
+                Resource: "*"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rDeploymentApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Ref pApplicationName
+      ComputePlatform: Server
+  rDeploymentConfig:
+    Type: AWS::CodeDeploy::DeploymentConfig
+    Properties:
+      DeploymentConfigName: !Sub "${pApplicationName}-CodeDeploy-Config-Name"
+      MinimumHealthyHosts:
+        Type: HOST_COUNT
+        Value: 0
+  rDeploymentGroup:
+    Condition: ExecuteDeployStage
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName:
+        Ref: "pApplicationName"
+      DeploymentConfigName: !Ref rDeploymentConfig
+      DeploymentGroupName: !Sub "${pApplicationName}-Code-DeploymentGroup"
+      AutoScalingGroups: [ !Ref pAutoScalingGroupName ]
+      Ec2TagFilters:
+        -
+          Key: !Ref pDeploymentTagKey
+          Value:
+            Ref: pDeploymentTagValue
+          Type: "KEY_AND_VALUE"
+      ServiceRoleArn: !GetAtt rCodeDeployServiceRole.Arn
+      TriggerConfigurations:
+        - !If
+          - IsProdCondition
+          - TriggerEvents:
+              - DeploymentSuccess
+              - DeploymentRollback
+            TriggerName: !Sub "${pApplicationName}-Code-DeploymentGroup-SNS-Trigger"
+            TriggerTargetArn: !Ref rSNSTopic
+          - !Ref AWS::NoValue
+  rPipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: !Sub "${pApplicationName}-Code-Pipeline-Policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+                  - "s3:PutObject"
+                Resource:
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName]]
+                  - !Join ['', ['arn:aws:s3:::', !Ref pArtifactStagingBucketName, '/*']]
+              - Effect: Allow
+                Action:
+                  - "codecommit:CancelUploadArchive"
+                  - "codecommit:GetBranch"
+                  - "codecommit:GetCommit"
+                  - "codecommit:GetUploadArchiveStatus"
+                  - "codecommit:UploadArchive"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "codedeploy:CreateDeployment"
+                  - "codedeploy:GetApplicationRevision"
+                  - "codedeploy:GetDeployment"
+                  - "codedeploy:GetDeploymentConfig"
+                  - "codedeploy:RegisterApplicationRevision"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "elasticbeanstalk:*"
+                  - "ec2:*"
+                  - "elasticloadbalancing:*"
+                  - "autoscaling:*"
+                  - "cloudwatch:*"
+                  - "s3:*"
+                  - "sns:*"
+                  - "cloudformation:*"
+                  - "rds:*"
+                  - "sqs:*"
+                  - "ecs:*"
+                  - "iam:PassRole"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                  - "lambda:ListFunctions"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "opsworks:CreateDeployment"
+                  - "opsworks:DescribeApps"
+                  - "opsworks:DescribeCommands"
+                  - "opsworks:DescribeDeployments"
+                  - "opsworks:DescribeInstances"
+                  - "opsworks:DescribeStacks"
+                  - "opsworks:UpdateApp"
+                  - "opsworks:UpdateStack"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "cloudformation:CreateStack"
+                  - "cloudformation:DeleteStack"
+                  - "cloudformation:DescribeStacks"
+                  - "cloudformation:UpdateStack"
+                  - "cloudformation:CreateChangeSet"
+                  - "cloudformation:DeleteChangeSet"
+                  - "cloudformation:DescribeChangeSet"
+                  - "cloudformation:ExecuteChangeSet"
+                  - "cloudformation:SetStackPolicy"
+                  - "cloudformation:ValidateTemplate"
+                  - "iam:PassRole"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "codebuild:BatchGetBuilds"
+                  - "codebuild:StartBuild"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'sns:*'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:DescribeKey"
+                  - "kms:Encrypt"
+                  - "kms:Decrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey"
+                  - "kms:GenerateDataKeyWithoutPlaintext"
+                Resource: "*"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+  rPipelineWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref pGitHubToken
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: 'refs/heads/{Branch}'
+      TargetPipeline: !Ref rPipeline
+      TargetAction: SourceAction
+      Name: !Sub "${pCodePipelineName}-Webhook"
+      TargetPipelineVersion: !GetAtt
+        - rPipeline
+        - Version
+      RegisterWithThirdParty: true
+  rPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      ArtifactStore:
+        Type: S3
+        #Location: !Ref pCodeBuildStagingBucketName
+        Location: !Ref pArtifactStagingBucketName
+      Name: !Sub "${pCodePipelineName}"
+      RoleArn: !GetAtt rPipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: '1'
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: Source
+              Configuration:
+                Owner: !Ref pGitHubOwner
+                Repo: !Ref pRepositoryName
+                Branch: !Ref pBranchName
+                OAuthToken: !Ref pGitHubToken
+                PollForSourceChanges: false
+              RunOrder: 1
+        - !If
+          - IsProdCondition
+          - Name: 'ApprovalStage'
+            Actions:
+              - Name: 'Approval'
+                ActionTypeId:
+                  Category: 'Approval'
+                  Owner: 'AWS'
+                  Version: '1'
+                  Provider: 'Manual'
+                Configuration:
+                  ExternalEntityLink: !Ref pApprovalStageUrl
+                  NotificationArn: !Ref rSNSTopic
+                  CustomData: Approve this change before deployment
+                RunOrder: 2
+          - !Ref AWS::NoValue
+        - Name: 'Build'
+          Actions:
+            - Name: 'CodeBuild'
+              ActionTypeId:
+                Category: 'Build'
+                Owner: 'AWS'
+                Version: '1'
+                Provider: 'CodeBuild'
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: !Sub "BuildOut-${pApplicationName}"
+              Configuration:
+                ProjectName: !Ref rCodeBuild
+              RunOrder: 3
+        - !If
+          - ExecuteDeployStage      
+          - Name: 'Deploy'
+            Actions:
+              - Name: 'CodeDeploy'
+                ActionTypeId:
+                  Category: 'Deploy'
+                  Owner: 'AWS'
+                  Version: '1'
+                  Provider: 'CodeDeploy'
+                InputArtifacts:
+                  - Name: !Sub "BuildOut-${pApplicationName}"
+                Configuration:
+                  ApplicationName: !Ref pApplicationName
+                  DeploymentGroupName: !Sub "${pApplicationName}-Code-DeploymentGroup"
+                RoleArn: !GetAtt rCodeDeployServiceRole.Arn
+                Region: !Ref 'AWS::Region'
+                RunOrder: 4
+          - !Ref AWS::NoValue    
+      Tags:
+        - Key: "Name"
+          Value: !Ref pPgeName
+        - Key: "Owner"
+          Value: !Ref pPgeOwner
+        - Key: "Notify"
+          Value: !Ref pPgeNotify
+        - Key: "AppID"
+          Value: !Ref pPgeAppId
+        - Key: "Environment"
+          Value: !Ref pPgeEnv
+        - Key: "Order"
+          Value: !Ref pPgeOrderNum
+        - Key: DataClassification
+          Value: !Ref pPgeDataClassification
+        - Key: Compliance
+          Value: !Ref pPgeCompliance
+        - Key: BusinessImpact
+          Value: !Ref pPgeBusinessImpact
+        - Key: CRIS
+          Value: !Ref pPgeCrisScore
+        - Key: LandingZone
+          Value: !Ref pPgeLandingZone
+Outputs:
+  oArtifactBucket:
+    Description: "S3 Bucket Name for Artifact Staging"
+    Value: !Ref pArtifactStagingBucketName
