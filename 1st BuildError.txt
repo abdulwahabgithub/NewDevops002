@@ -1,0 +1,61 @@
+Downloaded: https://repo.maven.apache.org/maven2/com/google/collections/google-collections/1.0/google-collections-1.0.jar (625 KB at 3413.1 KB/sec)
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 5 source files to /codebuild/output/src624941514/src/ec2only/java/app/target/classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[8,44] package com.amazonaws.serverless.proxy.model does not exist
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[9,44] package com.amazonaws.serverless.proxy.model does not exist
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[10,45] cannot find symbol
+  symbol:   class SpringBootLambdaContainerHandler
+  location: package com.amazonaws.serverless.proxy.spring
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,20] cannot find symbol
+  symbol:   class SpringBootLambdaContainerHandler
+  location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,53] cannot find symbol
+  symbol:   class AwsProxyRequest
+  location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,70] cannot find symbol
+  symbol:   class AwsProxyResponse
+  location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[20,23] cannot find symbol
+  symbol:   variable SpringBootLambdaContainerHandler
+  location: class com.pge.lambda.LambdaHandler
+[INFO] 7 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 48.534s
+[INFO] Finished at: Tue Oct 12 22:05:57 UTC 2021
+[INFO] Final Memory: 24M/59M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.1:compile (default-compile) on project spring-boot-lambda: Compilation failure: Compilation failure:
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[8,44] package com.amazonaws.serverless.proxy.model does not exist
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[9,44] package com.amazonaws.serverless.proxy.model does not exist
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[10,45] cannot find symbol
+[ERROR] symbol:   class SpringBootLambdaContainerHandler
+[ERROR] location: package com.amazonaws.serverless.proxy.spring
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,20] cannot find symbol
+[ERROR] symbol:   class SpringBootLambdaContainerHandler
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,53] cannot find symbol
+[ERROR] symbol:   class AwsProxyRequest
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,70] cannot find symbol
+[ERROR] symbol:   class AwsProxyResponse
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src624941514/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[20,23] cannot find symbol
+[ERROR] symbol:   variable SpringBootLambdaContainerHandler
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+[Container] 2021/10/12 22:05:57 Command did not exit successfully mvn -s ./settings.xml clean test -Dversion="${ARTIFACT_VERSION}-SNAPSHOT" exit status 1
+[Container] 2021/10/12 22:05:57 Phase complete: BUILD State: FAILED_WITH_ABORT
+[Container] 2021/10/12 22:05:57 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: mvn -s ./settings.xml clean test -Dversion="${ARTIFACT_VERSION}-SNAPSHOT". Reason: exit status 1
