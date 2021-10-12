@@ -1,0 +1,71 @@
+core/4.3.13.RELEASE/spring-core-4.3.13.RELEASE.jar: -sourcepath /codebuild/output/src942323461/src/ec2only/java/app/src/main/java: -s /codebuild/output/src942323461/src/ec2only/java/app/target/generated-sources/annotations -g -nowarn -target 11 -source 11 -encoding UTF-8
+[DEBUG] incrementalBuildHelper#beforeRebuildExecution
+[INFO] Compiling 5 source files to /codebuild/output/src942323461/src/ec2only/java/app/target/classes
+[DEBUG] incrementalBuildHelper#afterRebuildExecution
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[10,45] cannot find symbol
+  symbol:   class SpringBootLambdaContainerHandler
+  location: package com.amazonaws.serverless.proxy.spring
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,20] cannot find symbol
+  symbol:   class SpringBootLambdaContainerHandler
+  location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[20,23] cannot find symbol
+  symbol:   variable SpringBootLambdaContainerHandler
+  location: class com.pge.lambda.LambdaHandler
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 45.943s
+[INFO] Finished at: Mon Sep 27 18:25:39 UTC 2021
+[INFO] Final Memory: 22M/72M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.1:compile (default-compile) on project spring-boot-lambda: Compilation failure: Compilation failure:
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[10,45] cannot find symbol
+[ERROR] symbol:   class SpringBootLambdaContainerHandler
+[ERROR] location: package com.amazonaws.serverless.proxy.spring
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[16,20] cannot find symbol
+[ERROR] symbol:   class SpringBootLambdaContainerHandler
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] /codebuild/output/src942323461/src/ec2only/java/app/src/main/java/com/pge/lambda/LambdaHandler.java:[20,23] cannot find symbol
+[ERROR] symbol:   variable SpringBootLambdaContainerHandler
+[ERROR] location: class com.pge.lambda.LambdaHandler
+[ERROR] -> [Help 1]
+org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.1:compile (default-compile) on project spring-boot-lambda: Compilation failure
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:213)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)
+    at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:320)
+    at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)
+    at org.apache.maven.cli.MavenCli.execute(MavenCli.java:537)
+    at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)
+    at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)
+    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:290)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:230)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:414)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:357)
+Caused by: org.apache.maven.plugin.compiler.CompilationFailureException: Compilation failure
+    at org.apache.maven.plugin.compiler.AbstractCompilerMojo.execute(AbstractCompilerMojo.java:858)
+    at org.apache.maven.plugin.compiler.CompilerMojo.execute(CompilerMojo.java:129)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:101)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:209)
+    ... 19 more
+[ERROR] 
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+[Container] 2021/09/27 18:25:39 Command did not exit successfully mvn -s ./settings.xml clean test -Dversion="${ARTIFACT_VERSION}-SNAPSHOT" -X exit status 1
+[Container] 2021/09/27 18:25:39 Phase complete: BUILD State: FAILED_WITH_ABORT
+[Container] 2021/09/27 18:25:39 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: mvn -s ./settings.xml clean test -Dversion="${ARTIFACT_VERSION}-SNAPSHOT" -X. Reason: exit status 1
