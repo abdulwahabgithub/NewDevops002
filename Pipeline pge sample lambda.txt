@@ -1,0 +1,137 @@
+"""Checks if AWS CodePipeline is using PGE managed KMS Key.
+#####################################
+##           Gherkin               ##
+#####################################
+Description:
+  Checks if AWS CodePipeline is using PGE managed KMS Key.
+Trigger:
+    Periodic
+Reports on:
+      AWS::CodePipeline::Pipeline
+Scenarios:
+  Scenario: 1
+    Given: No CodePipelines exist
+     Then: Return None and log message "No Codepipelines detected."
+  Scenario: 2
+    Given: artifactStore or artifactStores section exist
+      And: the encryptionKey section is not present. This indicates codepipeline is not using a CMK
+     Then: Return NON_COMPLIANT with annotation "CodePipeline is not using PGE managed KMS key."
+  Scenario: 3
+    Given: artifactStore or artifactStores section exist
+      And: the encryptionKey section is present. This indicates codepipeline is using a CMK
+     Then: Return COMPLIANT with annotation "CodePipeline is using PGE managed KMS key."
+"""
+
+import json
+import os
+from botocore.config import Config
+import config_base.config_base as config
+
+#############
+# Main Code #
+#############
+
+def evaluate_compliance(event):
+    """Checks if AWS CodePipeline is using PGE managed KMS Key."""
+    client_config = Config(
+        retries={
+            "max_attempts": int(os.environ["CLIENT_RETRIES"]),
+            "mode": os.environ["RETRY_MODE"]
+        }
+    )
+
+    client = config.get_client("codepipeline", event, config=client_config)
+
+    evaluations: list = []
+    pipelines: list = get_pipelines(client)
+
+    # Scenario 0
+    if not pipelines:
+        config.log("No CodePipelines detected.")
+        return None
+
+    for pipeline in pipelines:
+        resource_id = pipeline["name"]
+        details = client.get_pipeline(name=resource_id)["pipeline"]
+
+        # setting the evals = None bc artifactStore/artifactStores might not exist in details
+        # setting evals = COMPLIANT/NON_COMPLIANT causes errors in evaluations
+        a_eval = None
+        b_eval = None
+        if "artifactStore" in details.keys():
+            a_store = details["artifactStore"]
+            if "encryptionKey" not in a_store.keys():
+                a_eval = "NON_COMPLIANT"
+
+        if "artifactStores" in details.keys():
+            b_store = details["artifactStores"]
+            if "encryptionKey" not in b_store.keys():
+                b_eval = "NON_COMPLIANT"
+
+        # Scenario 2
+        if a_eval == "NON_COMPLIANT" or b_eval == "NON_COMPLIANT":
+            annotation = config.build_json_annotation(
+                control_number=os.environ["CONTROL_NUMBER"],
+                standard_name=os.environ["STANDARD_NAME"],
+                message="CodePipeline is not using PGE managed KMS key."
+            )
+            compliance = "NON_COMPLIANT"
+        else:
+            # Scenario 3
+            annotation = config.build_json_annotation(
+                control_number=os.environ["CONTROL_NUMBER"],
+                standard_name=os.environ["STANDARD_NAME"],
+                message="CodePipeline is using PGE managed KMS key."
+            )
+            compliance = "COMPLIANT"
+
+        evaluations.append(config.build_evaluation(
+            resource_id,
+            compliance,
+            event,
+            os.environ["COMPLIANCE_RESOURCE_TYPE"],
+            annotation=annotation))
+
+    config.log(f"evaluations: {evaluations}")
+    return evaluations
+
+def get_pipelines(client: dict) -> list:
+    """Return the list of AWS CodePipelines."""
+    paginator = client.get_paginator("list_pipelines")
+    page_iterator = paginator.paginate()
+    results: list = []
+    for page in page_iterator:
+        _ = [results.append(api) for api in page["pipelines"]]
+    return results
+
+def lambda_handler(event: dict, lambda_context: dict):
+    """Lambda handler function."""
+    _ = lambda_context
+    config.check_defined(event, "event")
+    invoking_event = json.loads(event["invokingEvent"])
+    rule_parameters: dict = {}
+    if "ruleParameters" in event:
+        rule_parameters = json.loads(event["ruleParameters"])
+
+    config.log(f"RuleParams: {rule_parameters}")
+    notification_events: list = [
+        "ConfigurationItemChangeNotification",
+        "ScheduledNotification",
+        "OversizedConfigurationItemChangeNotification"
+    ]
+
+    if invoking_event["messageType"] in notification_events:
+        configuration_item = config.get_configuration_item(
+            invoking_event, event)
+        compliance_result = evaluate_compliance(event)
+    else:
+        return config.build_internal_error_response("Unexpected message type", str(invoking_event))
+
+    evaluations = config.get_clean_evaluations(
+        compliance_result, configuration_item, event, os.environ["COMPLIANCE_RESOURCE_TYPE"])
+
+    # Invoke the Config API to report the result of the evaluation
+    config.put_result(evaluations, event)
+
+    # Used solely for RDK test to be able to test Lambda function
+    return evaluations
