@@ -1,0 +1,23 @@
+Task #1 Update IAM Service User to Allow Assume Role to BMC_Discovery Roles
+Task #2 Create Lambda to Retrieve BMC_Discovery Role ARN for all Active Accounts
+Task #3 Create MEA Group for BMC Discovery Tool
+
+Task#1
+I would like to update the IAM Service User All-BMC to allow assume role to BMC_Discovery Roles
+so that the BMC_Discovery can run in all accounts
+Action:Create an MEA group with APP ID 2223 for BMC Discovery
+
+
+
+Task#2
+I would like to create an MEA group for BMC discovery tool
+so that we can create associated AWS roles in every account
+
+
+Task#3
+I would like to create an MEA group for BMC discovery tool
+so that we can create associated AWS roles in every account
+
+=========================
+How to Deploy CloudWatch Alert Integrated with OBM
+How to Deploy CloudWatch Rule Integrated with OBM

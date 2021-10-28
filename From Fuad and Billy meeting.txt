@@ -1,0 +1,1 @@
+agenda: review process/plan to incorporate pattern used for SNS to OBM in platform accounts to send Network/Transit Connectivity alerts 

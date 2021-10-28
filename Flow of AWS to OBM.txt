@@ -1,0 +1,18 @@
+Alerts and Rules flow between AWS resources and OBM Monitoring with Remedy Ticketing
+
+AWS --> OBM/Remedy Ticket --> ENOC
+
+EC2 /EC2 state Change
+RDS /???
+
+
+Roles
+BMC_Discovery
+
+Policy
+PG&E Managed Policy to enable BMC to discovery EC2 assets
+
+Lambda Function
+SendAlertToENOCTesting
+
+Alerts on Network -->CloudWatch-->SNS Topics--> Emails --> PagerDuty--> Lambda--> ENOC --> acknowledge.

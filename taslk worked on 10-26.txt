@@ -1,0 +1,15 @@
+ALL-BMC   policy   
+User have access to Roles BMC_Discovery (all access)
+
+
+STS BMC Discovery assume Role  (created)
+CLOUDCOE 2479
+
+Assume Roles Created  STS_BMC_Discovery_assume_Role (created)
+Unable to create user ALL-BMC with STS Role (permissiotn error)
+
+Update IAM Service User to Allow Assume Role to BMC_Discovery Roles    ----errror creating user STS  -- user should be in master accounts
+
+Create Lambda to Retrieve BMC_Discovery Role ARN for all Active Accounts  --- this will run in master accounts.
+
+OBM Monitoring Application Accounts Set Up    ----- ??? how will it work in all the accounts.
