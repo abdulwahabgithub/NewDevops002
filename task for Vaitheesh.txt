@@ -1,0 +1,10 @@
+Task #1 CloudFormation template IAM role policy creating different account
+Task #2 CloudWatch Template and alert using CloudFormation into Different account
+
+Pending tasks
+Following are the task we need to do.
+#1 First run query to list all the accounts.so using Master accounts and assume roles.
+#2 Create roles to the accounts. 
+we can talk now
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/working-with-templates-cfn-designer-json-editor.html
