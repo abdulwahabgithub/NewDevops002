@@ -1,0 +1,48 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "ssm:StartSession"
+            ],
+            "Resource": "arn:aws:ec2:*:*:instance/*",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "ssm:TerminateSession"
+            ],
+            "Resource": "arn:aws:ssm:*:*:session/${aws:username}-*",
+            "Effect": "Allow"
+        },
+        {
+            "Condition": {
+                "StringLike": {
+                    "ssm:resourceTag/aws:ssmmessages:session-id": [
+                        "${aws:userid}"
+                    ]
+                }
+            },
+            "Action": [
+                "ssm:TerminateSession"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "ec2:DescribeInstances",
+                "ssm:DescribeInstanceInformation"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": "arn:aws:lambda:us-west-2:514712703977:function:bmc_retrieve_discovery_roles",
+            "Effect": "Allow"
+        }
+    ]
+}
